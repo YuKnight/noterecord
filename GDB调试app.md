@@ -55,6 +55,7 @@ root@hammerhead:/data/local/tmp # ./gdbserver :1991 --attach 30704
     `adb forward tcp:<本地机器的网络端口号> tcp:<模拟器或是真机的网络端口号>`  
     > 例: adb [-d|-e|-s ] forward tcp:6100 tcp:7100   
     > 表示把本机的6100端口号与模拟器的7100端口建立起相关，当模拟器或真机向自己的7100端口发送了数据，那们我们可以在本机的6100端口读取其发送的内容  
+    查看已转发的端口 `adb forward --list`
 
 6. 进入gdb目录中执行gdb  
 `cd Android\Sdk\ndk-bundle\prebuilt\windows-x86_64\bin`  
