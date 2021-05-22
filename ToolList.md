@@ -55,11 +55,13 @@ Internet Download Manager
 XMind ZEN : 思维导图  
 
 ### 播放器
- * kmplayer  
- * pot player  
- * Media Player Classic – Home Cinema(MPC-HC)  
+ * [kmplayer](http://www.kmplayer.com/home)  
+ * [potplayer](https://potplayer.daum.net/?lang=zh_CN)  
+ * [Media Player Classic – Home Cinema(MPC-HC)  / MPC-BE](https://downloadly.ir/software/player/media-player-classic/)  
+ * [K-LITE MEGA CODEC PACK 16.1.0](https://downloadly.ir/software/player/k-lite-mega-codec-pack/)  
  * VLC Player  
- * [Kodi](https://kodi.tv/download "Kodi")
+ * [Kodi](https://kodi.tv/download "Kodi")  
+ * [CyberLink PowerDVD Ultra 21.0.1519.62](https://downloadly.ir/software/player/cyberlink-powerdvd/)  
 
 Source Insight 3.5/4.0  
 
