@@ -1,0 +1,60 @@
+Android动态调试 java
+
+ĠΔĠ
+使用mprop在不刷机的情况下修改手机 build.prop 中 ro.debuggable 的值
+
+ĠΔĠ
+调试必备条件：1.修改selinux的权限为 Permissive 2.手机系统要修改为可调试，[ro.debuggable]: [1]  或者apk重打包配置 android:debuggable="true" 3.开启adt-bundle或者ddms
+
+
+
+https://blog.csdn.net/l_mingo/article/details/71596582
+https://blog.csdn.net/freeking101/article/details/106879863
+
+root@hammerhead:/ # getprop|grep debugg
+getprop|grep debugg
+[init.svc.debuggerd]: [running]
+[ro.debuggable]: [1]
+
+
+手机系统要修改为可调试，[ro.debuggable]: [1]  或者apk重打包配置 android:debuggable="true" 
+
+0.修改selinux的权限
+getenforce 查看selinux属性
+执行setenforce 0,执行成功的话会变为Permissive
+
+1.启动 android_server
+
+2.进行端口转发
+adb forward tcp:23946 tcp:23946 
+
+3.debug模式启动app  packagename/activityname  这时手机会提示 waiting for debugger....
+adb shell am start -D -n com.game.game2048/com.game.game2048.MainActivity
+adb shell am start -D -n marvelous.magic/io.virtualapp.home.HomeActivity
+adb shell am start -D -n f8left.shell/f8left.shell.MainActivity
+
+adb shell am start -D -n com.nesun.sdktest/com.nesun.sdktest.MainActivity
+adb shell am start -D -n com.knight.anti/com.knight.anti.MainActivity
+
+
+
+一定要打开eclipse adt-bundle（主要是要启动DDMS！！！可以在sdk目录中单独启动ddms而不用启动eclipse，否则会出现无法附加到目标VM的错误），去ddms中查看调试app的端口 
+
+
+另起命令行输入：jdb -connect com.sun.jdi.SocketAttach:port=8700,hostname=localhost
+
+
+即可运行测试
+
+使用IDA调试java  先找方法名字符串，找到对应方法对应的方法id，根据方法id定位方法具体实现的位置。
+
+
+
+
+
+
+
+
+
+
+
