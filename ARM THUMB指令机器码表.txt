@@ -1,0 +1,151 @@
+
+
+
+
+
+
+
+[自己归纳整理的ARM THUMB指令机器码表](https://blog.csdn.net/judyge/article/details/41172121)
+
+
+
+有个项目需要分析ARM THUMB指令的机器码，网上没有搜索到整理好的机器码表，只好自己把相关指令的机器码归纳整理出来，这里分享给大家。THUMB指令并不多，只有六十多条，这个数字真的是非常了不起，51都一百三十多条呢。
+        可能这张表对于大多数朋友都用不到，毕竟要深入到机器码这一层的机会还是比较少，我想能到这一步的朋友一定对ARM指令有了足够的理解，所以就不对注释做另外的说明，相信你一看就懂。
+        呵呵，如果你用上了这张表，记得在内心感谢我一下，这可是我从《Addison Wesley - ARM Architecture Reference Manual (2nd Edition)》中一条一条摘录出来的。
+
+v is immed_value
+n is Rn
+m is Rm
+s is Rs
+r is register_list
+c is condition
+
+表一：按指令字母升序排列
+0100 0001 01mm mddd -- ADC Rd,Rm
+0001 110v vvnn nddd -- ADD Rd,Rn,#immed_3
+0011 0ddd vvvv vvvv -- ADD Rd,#immed_8
+0001 100m mmnn nddd -- ADD Rd,Rn,Rm
+0100 0100 hhmm mddd -- ADD Rd,Rm   h1h2,h1 is msb for Rd,h2 is msb for Rm
+1010 0ddd vvvv vvvv -- ADD Rd,PC,#immed_8*4
+1010 1ddd vvvv vvvv -- ADD Rd,SP,#immed_8*4
+1011 0000 0vvv vvvv -- ADD SP,#immed_7*4
+0100 0000 00mm mddd -- AND Rd,Rm
+0001 0vvv vvmm mddd -- ASR Rd,Rm,#immed_5
+0100 0001 00ss sddd -- ASR Rd,Rs
+1101 cccc vvvv vvvv -- Bcc signed_immed_8
+1110 0vvv vvvv vvvv -- B   signed_immed_11
+0100 0011 10mm mddd -- BIC Rd,Rm
+1011 1110 vvvv vvvv -- BKPT immed_8
+111h hvvv vvvv vvvv -- BL(X) immed_11
+0100 0111 1hmm mSBZ -- BLX Rm
+0100 0111 0Hmm mSBZ -- BX Rm
+0100 0010 11mm mnnn -- CMN Rn,Rm
+0010 1nnn vvvv vvvv -- CMP Rn,#immed_8
+0100 0010 10mm mnnn -- CMP Rn,Rm
+0100 0101 hhmm mnnn -- CMP Rn,Rm
+0100 0000 01mm mddd -- EOR Rd,Rm
+1100 1nnn rrrr rrrr -- LDMIA Rn!,reg_list
+0110 1vvv vvnn nddd -- LDR Rd,[Rn+#immed_5*4]
+0101 100m mmnn nddd -- LDR Rd,[Rn,Rm]
+0100 1ddd vvvv vvvv -- LDR Rd,[PC+#immed_5*4]
+1001 1ddd vvvv vvvv -- LDR Rd,[SP,#immed_8*4]
+0111 1vvv vvnn nmmm -- LDRB Rd,[Rn,#immed_5*4]
+0101 110m mmnn nddd -- LDRV Rd,[Rn,Rm]
+1000 1vvv vvnn nddd -- LDRH Rd,[Rn,#immed_5*2]
+0101 101m mmnn nddd -- LDRH Rd,[Rn,Rm]
+0101 011m mmnn nddd -- LDRSB Rd,[Rn,Rm]
+0101 111m mmnn nddd -- LDRSH Rd,[Rn,Rm]
+0000 0vvv vvmm mnnn -- LSL Rd,Rm,#immed_5
+0100 0000 10ss sddd -- LSL Rd,Rs
+0000 1vvv vvmm mddd -- LSR Rd,Rm,#immed_5
+0100 0000 11ss sddd -- LSR Rd,Rs
+0010 0ddd vvvv vvvv -- MOV Rd,#immed_8
+0001 1100 00nn nddd -- MOV Rd,Rn
+0100 0110 hhmm mddd -- MOV Rd,Rm
+0100 0011 01mm mddd -- MUL Rd,Rm
+0100 0011 11mm mddd -- MVN Rd,Rm
+0100 0010 01mm mddd -- NEG Rd,Rm
+0100 0011 00mm mddd -- ORR Rd,Rm
+1011 110R rrrr rrrr -- POP reg_list
+1011 010R rrrr rrrr -- PUSH reg_list
+0100 0001 11ss sddd -- ROR Rd,Rs
+0100 0001 10mm mddd -- SBC Rd,Rm
+1100 0nnn rrrr rrrr -- STMIA Rn!,reg_list
+0110 0vvv vvnn nddd -- STR Rd,[Rn,#immed_5*4]
+0101 000m mmnn nddd -- STR Rd,[Rn,Rm]
+1001 0ddd vvvv vvvv -- STR Rd,[SP,#immed_8*4]
+0111 0vvv vvnn nddd -- STRB Rd,[Rn,#immed_5]
+0101 010m mmnn nddd -- STRB Rd,[Rn,Rm]
+1000 0vvv vvnn nddd -- STRH Rd,[Rn,#immed_5*2]
+0101 001m mmnn nddd -- STRH Rd,[Rn,Rm]
+0001 111v vvnn nddd -- SUB Rd,Rn,#immed_3
+0011 1ddd vvvv vvvv -- SUB Rd,#immed_8
+0001 101m mmnn nddd -- SUB Rd,Rn,Rm
+1011 0000 1vvv vvvv -- SUB Sp,#immed_7*4
+1101 1111 vvvv vvvv -- SWI immed_8
+0100 0010 00mm mnnn -- TST Rn,Rm
+
+表二：按指令机器码升序排列
+0000 0vvv vvmm mnnn -- LSL Rd,Rm,#immed_5
+0000 1vvv vvmm mddd -- LSR Rd,Rm,#immed_5
+0001 0vvv vvmm mddd -- ASR Rd,Rm,#immed_5
+0001 100m mmnn nddd -- ADD Rd,Rn,Rm
+0001 101m mmnn nddd -- SUB Rd,Rn,Rm
+0001 110v vvnn nddd -- ADD Rd,Rn,#immed_3
+0001 111v vvnn nddd -- SUB Rd,Rn,#immed_3
+0001 1100 00nn nddd -- MOV Rd,Rn
+0010 0ddd vvvv vvvv -- MOV Rd,#immed_8
+0010 1nnn vvvv vvvv -- CMP Rn,#immed_8
+0011 0ddd vvvv vvvv -- ADD Rd,#immed_8
+0011 1ddd vvvv vvvv -- SUB Rd,#immed_8
+0100 0000 00mm mddd -- AND Rd,Rm
+0100 0000 01mm mddd -- EOR Rd,Rm
+0100 0000 10ss sddd -- LSL Rd,Rs
+0100 0000 11ss sddd -- LSR Rd,Rs
+0100 0001 00ss sddd -- ASR Rd,Rs
+0100 0001 01mm mddd -- ADC Rd,Rm
+0100 0001 10mm mddd -- SBC Rd,Rm
+0100 0001 11ss sddd -- ROR Rd,Rs
+0100 0010 00mm mnnn -- TST Rn,Rm
+0100 0010 01mm mddd -- NEG Rd,Rm
+0100 0011 00mm mddd -- ORR Rd,Rm
+0100 0010 10mm mnnn -- CMP Rn,Rm
+0100 0010 11mm mnnn -- CMN Rn,Rm
+0100 0011 01mm mddd -- MUL Rd,Rm
+0100 0011 10mm mddd -- BIC Rd,Rm
+0100 0011 11mm mddd -- MVN Rd,Rm
+0100 0100 hhmm mddd -- ADD Rd,Rm   h1h2,h1 is msb for Rd,h2 is msb for Rm
+0100 0101 hhmm mnnn -- CMP Rn,Rm
+0100 0110 hhmm mddd -- MOV Rd,Rm
+0100 0111 0Hmm mSBZ -- BX Rm
+0100 0111 1hmm mSBZ -- BLX Rm
+0100 1ddd vvvv vvvv -- LDR Rd,[PC+#immed_5*4]
+0101 000m mmnn nddd -- STR Rd,[Rn,Rm]
+0101 001m mmnn nddd -- STRH Rd,[Rn,Rm]
+0101 010m mmnn nddd -- STRB Rd,[Rn,Rm]
+0101 011m mmnn nddd -- LDRSB Rd,[Rn,Rm]
+0101 100m mmnn nddd -- LDR Rd,[Rn,Rm]
+0101 101m mmnn nddd -- LDRH Rd,[Rn,Rm]
+0101 110m mmnn nddd -- LDRV Rd,[Rn,Rm]
+0101 111m mmnn nddd -- LDRSH Rd,[Rn,Rm]
+0110 0vvv vvnn nddd -- STR Rd,[Rn,#immed_5*4]
+0110 1vvv vvnn nddd -- LDR Rd,[Rn+#immed_5*4]
+0111 1vvv vvnn nmmm -- LDRB Rd,[Rn,#immed_5*4]
+0111 0vvv vvnn nddd -- STRB Rd,[Rn,#immed_5]
+1000 0vvv vvnn nddd -- STRH Rd,[Rn,#immed_5*2]
+1000 1vvv vvnn nddd -- LDRH Rd,[Rn,#immed_5*2]
+1001 0ddd vvvv vvvv -- STR Rd,[SP,#immed_8*4]
+1001 1ddd vvvv vvvv -- LDR Rd,[SP,#immed_8*4]
+1010 0ddd vvvv vvvv -- ADD Rd,PC,#immed_8*4
+1010 1ddd vvvv vvvv -- ADD Rd,SP,#immed_8*4
+1011 0000 0vvv vvvv -- ADD SP,#immed_7*4
+1011 0000 1vvv vvvv -- SUB Sp,#immed_7*4
+1011 010R rrrr rrrr -- PUSH reg_list
+1011 110R rrrr rrrr -- POP reg_list
+1011 1110 vvvv vvvv -- BKPT immed_8
+1100 0nnn rrrr rrrr -- STMIA Rn!,reg_list
+1100 1nnn rrrr rrrr -- LDMIA Rn!,reg_list
+1101 cccc vvvv vvvv -- Bcc signed_immed_8
+1101 1111 vvvv vvvv -- SWI immed_8
+1110 0vvv vvvv vvvv -- B   signed_immed_11
+111h hvvv vvvv vvvv -- BL(X) immed_11
