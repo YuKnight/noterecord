@@ -1,0 +1,202 @@
+
+
+
+https://blog.csdn.net/gtkknd/article/details/52882645
+
+TBB（查表跳转字节范围的偏移量）指令和TBH（查表跳转半字范围的偏移量）指令，分别用于从一个字节数组表中查找转移地址，和从半字数组表中查找转移地址。TBH的转移范围已经足以应付任何臭长的switch结构。如果写出的switch连TBH都搞不定，只能说那人有严重自虐倾向。
+因为CM3的指令至少是按半字对齐的，表中的数值都是在左移一位后才作为前向跳转的偏移量的。又因为PC的值为当前地址+4，故TBB的跳转范围可达255*2+4=514；TBH的跳转范围更可高达65535*2+4=128KB+2。请注意：Both TBB和TBH都只能作前向跳转，也就是说偏移量是一个无符号TBB的语法格式为：
+TBB.W [Rn, Rm] ; PC+= Rn[Rm]*2
+在这里，Rn指向跳转表的基址，Rm则给出表中元素的下标。
+
+TBH的操作原理与TBB相同，只不过跳转表中的每个元素都是16位的。故而下标为Rm的元素要从Rn+2*Rm处去找。
+
+
+TBB解析：新PC = (PC + 4) + 2 * [Rn + Rm] 注：PC + 4 实际上是下一条指令的地址 
+
+
+.text:00030460 130 04 23                       MOVS            R3, #4
+.text:00030462
+.text:00030462                 def_3046A                               ; CODE XREF: sub_30440+28↓j
+.text:00030462                                                         ; sub_30440+5A↓j ...
+.text:00030462 130 0B 2B                       CMP             R3, #0xB ; jumptable 0003046A default case
+.text:00030464 130 45 D0                       BEQ             loc_304F2
+.text:00030466
+.text:00030466                 loc_30466                               ; CODE XREF: sub_30440+AC↓j
+.text:00030466 130 0A 2B                       CMP             R3, #0xA ; switch 11 cases
+.text:00030468 130 FB D8                       BHI             def_3046A ; jumptable 0003046A default case
+.text:0003046A 130 DF E8 03 F0                 TBB.W           [PC,R3] ; switch jump
+.text:0003046A                 ; ---------------------------------------------------------------------------
+.text:0003046E 130 40          jpt_3046A       DCB 0x40                ; jump table for switch statement
+.text:0003046F 130 06                          DCB 6
+.text:00030470 130 06                          DCB 6
+.text:00030471 130 06                          DCB 6
+.text:00030472 130 1F                          DCB 0x1F
+.text:00030473 130 0B                          DCB 0xB
+.text:00030474 130 09                          DCB 9
+.text:00030475 130 27                          DCB 0x27
+.text:00030476 130 41                          DCB 0x41
+.text:00030477 130 3D                          DCB 0x3D
+.text:00030478 130 17                          DCB 0x17
+.text:00030479 130 00                          ALIGN 2
+.text:0003047A
+.text:0003047A                 loc_3047A                               ; CODE XREF: sub_30440+2A↑j
+.text:0003047A 130 4F F0 FF 34                 MOV.W           R4, #0xFFFFFFFF ; jumptable 0003046A cases 1-3
+.text:0003047E 130 37 E0                       B               loc_304F0 ; jumptable 0003046A case 8
+.text:00030480                 ; ---------------------------------------------------------------------------
+.text:00030480
+
+
+
+
+.text:000304AC                 ; ---------------------------------------------------------------------------
+.text:000304AC
+.text:000304AC                 loc_304AC                               ; CODE XREF: sub_30440+2A↑j
+.text:000304AC 130 1A 4B                       LDR             R3, =(p8CE7CF7E248618395162AA6E821F6854_ptr - 0x8EDDC) ; jumptable 0003046A case 4
+.text:000304AE 130 EB 58                       LDR             R3, [R5,R3] ; p8CE7CF7E248618395162AA6E821F6854
+.text:000304B0 130 1B 68                       LDR             R3, [R3]
+.text:000304B2 130 00 2B                       CMP             R3, #0
+.text:000304B4 130 0C BF                       ITE EQ
+.text:000304B6 130 01 23                       MOVEQ           R3, #1
+.text:000304B8 130 05 23                       MOVNE           R3, #5
+.text:000304BA 130 D2 E7                       B               def_3046A ; jumptable 0003046A default case
+
+
+
+
+
+
+
+执行到 0003046A 130 DF E8 03 F0                 TBB.W
+此时 PC = 0x3046E   Rn = 0x3046E   Rm = 0x4  ===> Rn[Rm] = 0x1F
+
+即最终跳转地址为：
+PC+= Rn[Rm]*2  ======> PC+= 0x1F*2 ======>  0x3046E + 0x1F * 2 = 0x0x304AC  ======> 即为case 4 的地址 
+
+
+
+
+
+
+
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+TBH解析：新PC = (PC + 4) + 2 * [Rn + 2*Rm] 注：PC + 4 实际上是下一条指令的地址 
+
+
+.text:00031890 058 08 22                       MOVS            R2, #8
+.text:00031892 058 05 90                       STR             R0, [SP,#0x58+var_44]
+.text:00031894 058 0B 92                       STR             R2, [SP,#0x58+var_2C]
+.text:00031896 058 08 93                       STR             R3, [SP,#0x58+var_38]
+.text:00031898
+.text:00031898                 loc_31898                               ; CODE XREF: p50C7DD8ACD5A13EC209F8DDDBA97C581+A6↓j
+.text:00031898                                                         ; p50C7DD8ACD5A13EC209F8DDDBA97C581+D6↓j ...
+.text:00031898 468 0B 9A                       LDR             R2, [SP,#0x468+main_case_value]
+.text:0003189A
+.text:0003189A                 def_318A4                               ; CODE XREF: p50C7DD8ACD5A13EC209F8DDDBA97C581+2A↓j
+.text:0003189A 468 1D 2A                       CMP             R2, #0x1D ; jumptable 000318A4 default case
+.text:0003189C 468 00 F0 09 81                 BEQ.W           loc_31AB2
+.text:000318A0 468 1C 2A                       CMP             R2, #0x1C ; switch 9 cases
+.text:000318A2 468 FA D8                       BHI             def_318A4 ; jumptable 000318A4 default case
+.text:000318A4 468 DF E8 12 F0                 TBH.W           [PC,R2,LSL#1] ; switch jump
+.text:000318A4                 ; ---------------------------------------------------------------------------
+.text:000318A8 468 D6 00       jpt_318A4       DCW 0xD6                ; jump table for switch statement
+.text:000318AA 468 BC 00                       DCW 0xBC
+.text:000318AC 468 2E 00                       DCW 0x2E
+.text:000318AE 468 C9 00                       DCW 0xC9
+.text:000318B0 468 1D 00                       DCW 0x1D
+.text:000318B2 468 47 00                       DCW 0x47
+.text:000318B4 468 54 00                       DCW 0x54
+.text:000318B6 468 3C 00                       DCW 0x3C
+.text:000318B8 468 F9 00                       DCW 0xF9
+.text:000318BA 468 87 00       word_318BA      DCW 0x87                ; CODE XREF: sub_316A4+172↑j
+.text:000318BC 468 04 01                       DCW 0x104
+.text:000318BE 468 CE 00                       DCW 0xCE
+.text:000318C0 468 72 00                       DCW 0x72
+.text:000318C2 468 23 00                       DCW 0x23
+.text:000318C4 468 D4 00                       DCW 0xD4
+.text:000318C6 468 44 00                       DCW 0x44
+.text:000318C8 468 80 00                       DCW 0x80
+.text:000318CA 468 E6 00                       DCW 0xE6
+.text:000318CC 468 F2 00                       DCW 0xF2
+.text:000318CE 468 75 00                       DCW 0x75
+.text:000318D0 468 97 00                       DCW 0x97
+.text:000318D2 468 B8 00                       DCW 0xB8
+.text:000318D4 468 DD 00                       DCW 0xDD
+.text:000318D6 468 35 00                       DCW 0x35
+.text:000318D8 468 7A 00                       DCW 0x7A
+.text:000318DA 468 7D 00                       DCW 0x7D
+.text:000318DC 468 C4 00                       DCW 0xC4
+.text:000318DE 468 95 00                       DCW 0x95
+.text:000318E0 468 04 01                       DCW 0x104
+.text:000318E2                 ; ---------------------------------------------------------------------------
+
+
+
+
+.text:00031A9A                 ; ---------------------------------------------------------------------------
+.text:00031A9A
+.text:00031A9A                 loc_31A9A                               ; CODE XREF: p50C7DD8ACD5A13EC209F8DDDBA97C581+2C↑j
+.text:00031A9A 468 08 98                       LDR             R0, [SP,#0x468+var_448] ; jumptable 000318A4 case 8
+.text:00031A9C 468 FF F7 2A FD                 BL              lib_start_address
+.text:00031AA0 468 C3 69                       LDR             R3, [R0,#0x1C]
+.text:00031AA2 468 06 46                       MOV             R6, R0
+.text:00031AA4 468 07 90                       STR             R0, [SP,#0x468+var_44C]
+.text:00031AA6 468 00 EB 03 08                 ADD.W           R8, R0, R3
+.text:00031AAA 468 13 23                       MOVS            R3, #0x13
+.text:00031AAC 468 0B 93                       STR             R3, [SP,#0x468+main_case_value]
+.text:00031AAE 468 F3 E6                       B               loc_31898
+.text:00031AB0                 ; ---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+========================================================================================================================================
+.text:000318A4 468 DF E8 12 F0                 TBH.W           [PC,R2,LSL#1] ; switch jump
+.text:000318A4                 ; ---------------------------------------------------------------------------
+.text:000318A8 468 D6 00       jpt_318A4       DCW 0xD6                ; jump table for switch statement
+
+
+执行到 TBH.W           [PC,R2,LSL#1] 
+此时 PC = 0x318A8   Rn = 0x318A8   Rm = 0x8  ===> Rn+2*Rm = hex(0x318A8 + 2*8) = 0x318b8 
+查表可得：.text:000318B8 468 F9 00                       DCW 0xF9  
+即最终跳转地址为：
+PC+= Rn[Rm]*2  ======> PC+= [Rn+2*Rm]*2 ======>  0x318A8 + 0xF9 * 2 = 0x31A9A  ======> 即为case 8 的地址 
+
+
+
+此 TBH switch 最终修复的配置为：Edit -> Other -> Specify switch idiom...
+
+
+Address of jump table: 		0x318A8
+Number of elements:		0x1D
+Size of table element:		2
+Element shift amount:		1 -> 猜测是表中的元素需要 *2 所以偏移为左移 1 位 
+Element base value:		0x318A8
+
+Start of the switch idiom:	0x3189A
+Input register of switch:	R2
+First(lowest) input value:	0
+Default jump address:		0x31AB2
+
+下面四个选项都留空 ！  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
