@@ -1,0 +1,1436 @@
+
+# 虚拟机环境
+1. 安装VMware 跟 Ubuntu 14 虚拟机
+2. Ubuntu下在当前目录打开命令行和终端: sudo apt-get install nautilus-open-terminal
+3. 安装VMTools，
+    1. 拷贝VMwareTools-10.3.23-16594550.tar.gz 到用户目录中，
+    2. 解压: nesun@ubuntu:~/vmware-tools-distrib$ tar -xzvf VMwareTools-10.3.23-16594550.tar.gz
+        Run this command to extract the contents of the VMware Tools bundle: tar xzvf /mnt/cdrom/VMwareTools-x.x.x-xxxx.tar.gz -C /tmp/
+    3. 进入目录中执行 vmware-install.pl
+        nesun@ubuntu:~$ cd vmware-tools-distrib/
+        nesun@ubuntu:~/vmware-tools-distrib$ sudo ./vmware-install.pl 
+        进行安装，一路回车，需要yes的给yes通过，即可完成安装，最后重启即可
+4. 设置共享目录 `D:\android-system56` : https://blog.csdn.net/wct3344142/article/details/105579779  ubuntu内访问路径为: /mnt/hgfs/android-system56
+5. 解压: nesun@ubuntu:~/Desktop$ unzip /mnt/hgfs/android-system56/android-6.0.1_r11.zip -d /home/nesun/androi6/android-6.0.1_r11/
+    # unzip test.zip
+    // 它会默认将文件解压到当前目录，如果要解压到指定目录，可以加上 -d 选项 
+    # unzip test.zip -d /root/ 
+    linux下tar命令解压到指定的目录 ：
+    #tar zxvf /bbs.tar.zip -C /zzz/bbs 
+    //把根目录下的bbs.tar.zip解压到/zzz/bbs下，前提要保证存在/zzz/bbs这个目录
+
+
+
+
+# 源码编译环境搭建
+
+## 电脑手机USB连接配置
+### 设置系统以检测设备
+sudo usermod -aG plugdev $LOGNAME ------> sudo usermod -aG plugdev nesun
+sudo apt-get install android-sdk-platform-tools-common
+
+$sudo add-apt-repository universe && sudo apt-get update
+$sudo apt-get install android-sdk-platform-tools-common
+
+
+下载地址：https://pkgs.org/download/android-sdk-platform-tools-common
+
+// https://source.android.com/source/initializing#configuring-usb-access
+// https://wiki.archlinux.org/title/Android_Debug_Bridge#Adding_udev_rules
+
+https://blog.csdn.net/weixin_30782293/article/details/99769424
+sudo usermod -a -G plugdev $(id -u -n)
+sudo udevadm control --reload-rules
+sudo service udev restart
+sudo udevadm trigger
+
+//https://www.codeleading.com/article/72615898579/
+SUBSYSTEM=="usb",ATTRS{idVendor}=="18d1",ATTRS{idProduct}=="4ee7",MODE="0666",GROUP="plugdev",SYMLINK+="android",SYMLINK+="android_adb"
+
+
+$ fastboot -l devices
+nesun@ubuntu:~/Desktop$ lsusb
+Bus 001 Device 005: ID 18d1:4ee0 Google Inc. 
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 002 Device 003: ID 0e0f:0002 VMware, Inc. Virtual USB Hub
+Bus 002 Device 002: ID 0e0f:0003 VMware, Inc. Virtual Mouse
+Bus 002 Device 001: ID 1d6b:0001 Linux Foundation 1.1 root hub
+
+
+Second, configure udev (you must replace "idVendor" value with yours) :
+$ sudo sh -c "echo '# Megafon SP-A20i' >> /etc/udev/rules.d/51-android.rules"
+$ sudo sh -c "echo 'SUBSYSTEM==\"usb\", ATTR{idVendor}==\"8087\", MODE=\"0666\", GROUP=\"plugdev\"' >> /etc/udev/rules.d/51-android.rules"
+$ sudo service udev restart
+
+
+
+
+
+// 
+/etc/udev/rules.d/51-android.rules
+SUBSYSTEM=="usb", ATTR{idVendor}=="[VENDOR ID]", MODE="0660", GROUP="adbusers"
+SUBSYSTEM=="usb",ATTR{idVendor}=="[VENDOR ID]",ATTR{idProduct}=="[PRODUCT ID]",SYMLINK+="android_adb"
+SUBSYSTEM=="usb",ATTR{idVendor}=="[VENDOR ID]",ATTR{idProduct}=="[PRODUCT ID]",SYMLINK+="android_fastboot"
+
+
+nesun@ubuntu:~/Desktop$ lsusb
+Bus 001 Device 005: ID 18d1:4ee0 Google Inc. 
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 002 Device 003: ID 0e0f:0002 VMware, Inc. Virtual USB Hub
+Bus 002 Device 002: ID 0e0f:0003 VMware, Inc. Virtual Mouse
+Bus 002 Device 001: ID 1d6b:0001 Linux Foundation 1.1 root hub
+
+
+
+Each Android device has a USB vendor/product ID. An example for HTC Evo is:
+vendor id: 0bb4
+product id: 0c8d
+Plug in your device and execute:
+
+$ lsusb
+It should come up something like this:
+Bus 002 Device 006: ID 0bb4:0c8d High Tech Computer Corp.
+
+
+
+SUBSYSTEM=="usb", ATTR{idVendor}=="18d1", MODE="0660", GROUP="adbusers"
+SUBSYSTEM=="usb",ATTR{idVendor}=="18d1",ATTR{idProduct}=="4ee0",SYMLINK+="android_adb"
+SUBSYSTEM=="usb",ATTR{idVendor}=="18d1",ATTR{idProduct}=="4ee0",SYMLINK+="android_fastboot"
+
+sudo gedit /etc/udev/rules.d/51-android.rules
+sudo chmod a+r /etc/udev/rules.d/51-android.rules
+sudo systemctl restart udev
+
+
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+
+
+
+安装deb包：sudo dpkg -i path_to_deb_file
+搜索安装的包：sudo apt list --installed | grep grid
+sudo apt remove program_name
+
+### 虚拟机内驱动安装 
+因为Ubuntu14没有相应的安装包，需要下载https://ubuntu.pkgs.org/21.10/ubuntu-universe-amd64/android-sdk-platform-tools-common_28.0.2+3_all.deb.html
+下载地址：https://pkgs.org/download/android-sdk-platform-tools-common 
+选择最新的android-sdk-platform-tools-common_28.0.2+3_all.deb 下载下来解压出51-android.rules，复制里面内容。
+sudo gedit /etc/udev/rules.d/51-android.rules把复制的内容粘贴进去并保存。
+sudo chmod a+r /etc/udev/rules.d/51-android.rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+
+
+### 下载platform-tools
+https://developer.android.google.cn/studio/releases/platform-tools
+$ wget https://dl.google.com/android/repository/platform-tools_r31.0.3-linux.zip
+$ unzip /mnt/hgfs/android-system56/platform-tools_r31.0.3-linux.zip -d /home/nesun/ 
+
+添加环境变量：/etc/profile 或者 ~/.bashrc
+vi ~/.bashrc 
+PATH=$PATH:/home/nesun/platform-tools
+source ~/.bashrc
+
+
+
+
+
+## 下载驱动
+查看源码版本的方法：在源码路径下，查看/build/core/build_id.mk文件中的BUILD_ID即为源码的版本号。
+```
+nesun@ubuntu:~/android6/android-6.0.1_r11$ cat build/core/build_id.mk|grep export
+export BUILD_ID=MMB29Q
+```
+
+根据源代码标记和版本：https://source.android.google.cn/setup/build-numbers#source-code-tags-and-builds  查看相应的版本
+MMB29Q	android-6.0.1_r11	Marshmallow	Nexus 5、Nexus 5X、Nexus 6、Nexus 6P、Nexus 7 (flo/deb)
+LMY48M	android-5.1.1_r14	Lollipop	                Nexus 4、Nexus 5、Nexus 6、Nexus 7 (flo)、Nexus 9 (volantis/volantisg)、Nexus 10
+M4B30Z	android-6.0.1_r77	Marshmallow	Nexus 5
+
+https://developers.google.com/android/drivers#hammerheadmmb29k，实际是三个shell 脚本，将shell脚本放在源码根目录下，执行shell脚本后，会在根目录下生成vendor目录，驱动文件就在该目录下，例如脚本文件名为 broadcom.sh ，则敲入命令 ./broadcom.sh 执行脚本
+https://developers.google.com/android/drivers
+
+Nexus 5 (GSM/LTE) binaries for Android 6.0.1 (MMB29Q)
+NFC, Bluetooth, Wi-Fi：https://dl.google.com/dl/android/aosp/broadcom-hammerhead-mmb29q-4332178f.tgz
+Camera, Sensors, Audio：https://dl.google.com/dl/android/aosp/lge-hammerhead-mmb29q-995a5660.tgz
+Graphics, GSM, Camera, GPS, Sensors, Media, DSP, USB：https://dl.google.com/dl/android/aosp/qcom-hammerhead-mmb29q-5d820575.tgz
+
+
+Nexus 5 (GSM/LTE) binaries for Android 6.0.1 (M4B30Z)
+NFC, Bluetooth, Wi-Fi：https://dl.google.com/dl/android/aosp/broadcom-hammerhead-m4b30z-21cf8433.tgz
+Camera, Sensors, Audio：https://dl.google.com/dl/android/aosp/lge-hammerhead-m4b30z-520d054d.tgz
+Graphics, GSM, Camera, GPS, Sensors, Media, DSP, USB：https://dl.google.com/dl/android/aosp/qcom-hammerhead-m4b30z-d6c0fe26.tgz
+
+
+Nexus 5 (GSM/LTE) binaries for Android 5.1.1 (LMY48M)
+NFC, Bluetooth, Wi-Fi：https://dl.google.com/dl/android/aosp/broadcom-hammerhead-lmy48m-5d6ca8e6.tgz
+Camera, Sensors, Audio：https://dl.google.com/dl/android/aosp/lge-hammerhead-lmy48m-0759ba99.tgz
+Graphics, GSM, Camera, GPS, Sensors, Media, DSP, USB：https://dl.google.com/dl/android/aosp/qcom-hammerhead-lmy48m-b7143e92.tgz
+
+
+wget https://dl.google.com/dl/android/aosp/broadcom-hammerhead-mmb29q-4332178f.tgz
+wget https://dl.google.com/dl/android/aosp/lge-hammerhead-mmb29q-995a5660.tgz
+wget https://dl.google.com/dl/android/aosp/qcom-hammerhead-mmb29q-5d820575.tgz
+
+nesun@ubuntu:~/android6$ cp -R Android\ 6.0.1\ \(MMB29Q\)/ /mnt/hgfs/android-system56/
+创建vendor目录：
+nesun@ubuntu:~/android6$ mkdir /home/nesun/android6/android-6.0.1_r11/vendor
+nesun@ubuntu:~/android6/Android 6.0.1 (MMB29Q)$ tar zxvf broadcom-hammerhead-mmb29q-4332178f.tgz -C ~/android6/android-6.0.1_r11/
+nesun@ubuntu:~/android6/Android 6.0.1 (MMB29Q)$ tar zxvf lge-hammerhead-mmb29q-995a5660.tgz -C ~/android6/android-6.0.1_r11/
+nesun@ubuntu:~/android6/Android 6.0.1 (MMB29Q)$ tar zxvf qcom-hammerhead-mmb29q-5d820575.tgz -C ~/android6/android-6.0.1_r11/
+nesun@ubuntu:~/android6/Android 6.0.1 (MMB29Q)$ cd ~/android6/android-6.0.1_r11/
+nesun@ubuntu:~/android6/android-6.0.1_r11$ chmod a+x extract-*
+nesun@ubuntu:~/android6/android-6.0.1_r11$ ./extract-broadcom-hammerhead.sh
+nesun@ubuntu:~/android6/android-6.0.1_r11$ ./extract-lge-hammerhead.sh
+nesun@ubuntu:~/android6/android-6.0.1_r11$ ./extract-qcom-hammerhead.sh
+按空格键快速浏览 license
+
+
+nexus 6p binaries for Android 6.0.1 (MMB29Q)：https://bbs.ixmoe.com/t/nexus6p/18185
+
+```
+编译步骤略，具体可以参考：
+ http://www.jianshu.com/p/ecb9c132030f
+ https://source.android.com/source/building.html
+
+我编译的Build是MMB29Q，最终是为了刷入到nexus6P的真机中， 因此Build configuration是 aosp_angler-userdebug
+
+ok，现在我已经有正确编译的结果了，现在说一下如何刷入nexus6P。
+
+在将自己编译的AOSP刷入nexus5中讲述了如何刷入nexu5，但在nexus6P下，情况有所不同：
+ 在驱动页面，我们找不到6P对应的驱动包了，但是在image页面，我们可以找到google提供好的直接可以刷的image。 经过搜索，发现6P的驱动不需要再像nexus5那样放到AOSP中进行编译。
+
+在Google提供的image中，发现了现成的vendor.img，于是可以将编译的结果直接覆盖掉Google提供的image中的对应文件，再按照image页面的文档步骤刷入即可。
+```
+
+6.0.1 (MMB29Q)	Link	24a6e02f2c3134a32e0d164d0163834595787faab48b07e92fc4a4a89d26e255
+
+https://dl.google.com/dl/android/aosp/angler-mmb29q-factory-24a6e02f.zip
+
+
+https://dl.google.com/dl/android/aosp/angler-mmb29q-factory-24a6e02f.zip?hl=zh-HK
+
+即需要从相应的工厂镜像里面解压出 vendor.img 在放到相关目录一起刷机。
+
+
+Embedded Android by Karim Yaghmour
+
+
+
+## JDK
+有关较低 Android 版本的预编译路径和安装说明，请参阅安装 JDK。
+Android 7.0 (Nougat) - Android 8.0 (O)：Ubuntu - OpenJDK 8；Mac OS - jdk 8u45 或更高版本
+Android 5.x (Lollipop) - Android 6.0 (Marshmallow)：Ubuntu - OpenJDK 7；Mac OS - jdk-7u71-macosx-x64.dmg
+Android 2.3.x (Gingerbread) - Android 4.4.x (KitKat)：Ubuntu - Java JDK 6；Mac OS - Java JDK 6
+Android 1.5 (Cupcake) - Android 2.2.x (Froyo)：Ubuntu - Java JDK 5
+
+
+## 安装openjdk7
+ubuntu 15.04及之后的版本的在线安装库中只支持openjdk8和openjkd9的安装，因此想要安装openjdk7需要先设置ppa
+sudo add-apt-repository ppa:openjdk-r/ppa
+sudo apt-get update
+sudo apt-get install -y openjdk-7-jdk
+如果需要编译不同版本的android系统，可能需要不同版本的jdk，使用如下命令切换jdk版本：
+sudo update-alternatives --config java
+sudo update-alternatives --config javac
+
+
+JAVA_HOME=/root/COMPILE/aosp8.1.0/repo-downloads/java-se-8u41-ri
+PATH=$JAVA_HOME/bin:$PATH
+CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JAVA_HOME/jre/lib/rt.jar
+export JAVA_HOME
+export PATH
+export CLASSPATH
+
+
+
+### 查看下载的安装包：
+nesun@ubuntu:~/Desktop$ ls -al /var/cache/apt/archives
+-rw-r--r-- 1 root root    68528 Mar 10  2013 nautilus-open-terminal_0.20-1_amd64.deb
+-rw-r--r-- 1 root root 15963076 Apr  9  2019 openjdk-7-jdk_7u211-2.6.17-0ubuntu0.1_amd64.deb
+-rw-r--r-- 1 root root   171880 Apr  9  2019 openjdk-7-jre_7u211-2.6.17-0ubuntu0.1_amd64.deb
+-rw-r--r-- 1 root root 39615434 Apr  9  2019 openjdk-7-jre-headless_7u211-2.6.17-0ubuntu0.1_amd64.deb
+
+
+
+## 安装所需的程序包 (Ubuntu 14.04): https://source.android.google.cn/setup/initializing
+$sudo apt-get install -y git-core gnupg flex bison gperf build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z-dev ccache libgl1-mesa-dev libxml2-utils xsltproc unzip
+注意：要使用 SELinux 工具进行政策分析，您还需要安装 python-networkx 软件包。
+注意：如果您使用 LDAP 并且希望运行 ART 主机测试，则还需要安装 libnss-sss:i386 软件包。
+
+
+
+###  设置 ccache
+要使用 ccache，请在源代码树的根目录下执行以下命令：
+$export USE_CCACHE=1
+$export CCACHE_DIR=/<path_of_your_choice>/.ccache
+$prebuilts/misc/linux-x86/ccache/ccache -M 50G
+
+请将以下内容添加到 .bashrc（或等同文件）中：
+export USE_CCACHE=1
+默认情况下，缓存将存储在 ~/.ccache 下。
+
+
+
+
+
+
+### 编译源码
+初始化编译环境：
+source build/envsetup.sh  或 . build/envsetup.sh
+选择编译目标
+键入lunch命令，选择相应编译的版本 ------> 19. aosp_hammerhead-userdebug
+开始编译：make -j4 
+执行make -j4 ，4为同时编译的线程数，一般Google推荐执行源码编译的线程数 = CPU核心数 x 2 + 2，比如4核，就推荐10线程编译，执行make -j10
+关于cpu个数，可以使用如下命令查看：
+cat /proc/cpuinfo
+
+
+
+
+
+
+### 刷机
+将生成的镜像 img 路径设置到 ANDROID_PRODUCT_OUT 中：
+vi ~/.bashrc 
+export ANDROID_PRODUCT_OUT=/home/nesun/android6/android-6.0.1_r11/out/target/product/hammerhead
+source ~/.bashrc
+
+
+
+adb reboot bootloader
+
+查看是否有设备连接：
+fastboot devices -l 
+
+$sudo add-apt-repository universe && sudo apt-get update
+$sudo apt-get install android-sdk-platform-tools-common
+adb reboot bootloader
+解锁：fastboot flashing unlock
+fastboot flashall -w
+fastboot reboot
+
+
+刷机完成系统之后起不来则需要进入recovery模式双清(同时按下电源键跟音量下键5s 选择recovery模式) !!!!! 
+
+
+git config --global user.name "nesun"
+git config --global user.email "nesun@nesun.com"
+
+
+
+
+1. 源码编译环境搭建，编译，刷机验证
+
+1. 刷机验证，xposed源码编译/脱壳环境编译
+2. 见TODO
+
+TODO：
+1. xposed源码编译
+2. 脱壳环境源码编译
+3. sharedpreferences 处理
+4. 脱壳后的dex修复工具（0填充的可以）
+5. 娟哥rsa加解密
+xopsed跟脱壳环境计划本周处理完，剩下部分一天时间处理。
+
+
+
+
+-----------------------------------------------------------------------------------------------------------
+使用XposedTool来编译：
+首先编译XposedTool：
+
+nesun@ubuntu:~/xposedSource$ tar zxvf /mnt/hgfs/android-system56/xposedBuild/XposedTools-89.tar.gz -C .
+
+下载Command line tools：
+https://developer.android.google.cn/studio?hl=zh-cn#downloads
+
+https://dl.google.com/android/repository/commandlinetools-linux-7583922_latest.zip?hl=zh-cn
+https://dl.google.com/android/repository/commandlinetools-linux-7302050_latest.zip?hl=zh-cn
+https://dl.google.com/android/repository/commandlinetools-linux-6200805_latest.zip?hl=zh-cn
+https://dl.google.com/android/repository/commandlinetools-linux-6514223_latest.zip?hl=zh-cn
+https://dl.google.com/android/repository/commandlinetools-linux-6858069_latest.zip?hl=zh-cn
+
+
+
+
+
+
+解压：nesun@ubuntu:~$ tar zxvf /mnt/hgfs/android-system56/android-studio-2020.3.1.25-linux.tar.gz -C ~/
+运行AndroidStudio：nesun@ubuntu:~$ ~/android-studio/bin/studio.sh
+使用默认配置。
+
+
+--------------------------------------------------------------------------------------------------------------
+Android studio 打开android源码的方法：https://juejin.cn/post/6844903709583867918
+以上若已经编译成功的话，我们进入到Android源码的路径下面，首先我们需要生成AndroidStudio所需要的格式#mmm 是envsetupzhong 上的命令
+source ./build/envsetup.sh
+mmm development/tools/idegen/
+
+复制代码执行成功后，在执行sudo sh ./development/tools/idegen/idegen.sh
+如果编译过程中编译报错,如下信息，则请执行：make update-api
+
+
+
+
+解压XposedBridge到aosp_dir/framework/base/cmds/目录中并改名为 xposed
+```
+cd aosp_dir/framework/base/cmds/xposed
+git clone https://github.com/rovo89/XposedBridge.git
+```
+nesun@ubuntu:~/android6/android-6.0.1_r11/frameworks/base/cmds$ pwd
+/home/nesun/android6/android-6.0.1_r11/frameworks/base/cmds
+nesun@ubuntu:~/android6/android-6.0.1_r11/frameworks/base/cmds$ tar zxvf /mnt/hgfs/android-system56/xposedBuild/XposedBridge-89.tar.gz -C /home/nesun/android6/android-6.0.1_r11/frameworks/base/cmds
+nesun@ubuntu:~/android6/android-6.0.1_r11/frameworks/base/cmds$ mv XposedBridge-89 XposedBridge
+
+将目录A重命名为B: mv A B
+
+nesun@ubuntu:~/android6/android-6.0.1_r11/frameworks/base/cmds$ mv Xposed xposed
+
+--------------------------------------------------------------------------------------------------------------------------------------------------
+新建文件Android.mk并添加到~/android6/android-6.0.1_r11/frameworks/base/cmds/XposedBridge/目录中 
+```
+# https://juejin.cn/post/6844903709730668551
+LOCAL_PATH:= $(call my-dir)
+include $(CLEAR_VARS)
+LOCAL_DEX_PREOPT = false
+LOCAL_MODULE := XposedBridge
+
+LOCAL_SRC_FILES := \
+     $(call all-java-files-under, src) \
+     $(call all-java-files-under, src/apacheCommonsLang/external) \
+     $(call all-java-files-under, hiddenapistubs/src)
+
+include $(BUILD_JAVA_LIBRARY)
+
+$(LOCAL_INTERMEDIA_TARGETS): PRIVATE_EXTRA_JAR_ARGS := -C "$(LOCAL_PATH)" \
+assets -C "#(LOCAL_PATH)" NOTICE.txt
+```
+
+
+在android源码下使用mmm命令编译xposedbridge模块。命令形式为mmm [模块路径]。
+nesun@ubuntu:~/android6/android-6.0.1_r11$ mmm ~/android6/android-6.0.1_r11/frameworks/base/cmds/XposedBridge/
+
+
+nesun@ubuntu:~/android6/android-6.0.1_r11$ source build/envsetup.sh
+nesun@ubuntu:~/android6/android-6.0.1_r11$ lunch（选择19. aosp_hammerhead-userdebug）
+nesun@ubuntu:~/android6/android-6.0.1_r11$ make -j4
+nesun@ubuntu:~/android6/android-6.0.1_r11$ mmm ./frameworks/base/cmds/XposedBridge/
+target Jar: XposedBridge (out/target/common/obj/JAVA_LIBRARIES/XposedBridge_intermediates/javalib.jar)
+Install: out/target/product/hammerhead/system/framework/XposedBridge.jar
+
+把编译好的out/target/product/hammerhead/system/framework/XposedBridge.jar拷贝一份到 /home/nesun/android6/android-6.0.1_r11/out/java/XposedBridge.jar 
+后续编译 ./build.pl -t arm:23（编译生成供cpu架构为arm，sdk为23平台使用的Xposed）会用到
+
+
+备份一份art目录之后删除arm目录。
+nesun@ubuntu:~/android6/android-6.0.1_r11$ zip -q -r art_asop.zip ./art/
+nesun@ubuntu:~/android6/android-6.0.1_r11$ cp art_asop.zip /mnt/hgfs/android-system56/
+nesun@ubuntu:~/android6/android-6.0.1_r11$ 
+
+
+下载相应版本的android_art-89并解压
+nesun@ubuntu:~/android6/android-6.0.1_r11$ tar zxvf /mnt/hgfs/android-system56/xposedBuild/android_art-89-sdk23.tar.gz -C ~/android6/android-6.0.1_r11/
+nesun@ubuntu:~/android6/android-6.0.1_r11$ mv android_art-89-sdk23/ art/
+
+
+nesun@ubuntu:~/android6/android-6.0.1_r11$ tar zxvf /mnt/hgfs/android-system56/xposedBuild/Xposed-89.tar.gz -C ./frameworks/base/cmds/
+nesun@ubuntu:~/android6/android-6.0.1_r11$ cd ./frameworks/base/cmds
+nesun@ubuntu:~/android6/android-6.0.1_r11/frameworks/base/cmds$ mv Xposed-89/ Xposed/
+
+
+进入XposedTools-89目录，复制一份build.conf.sample，并将它重命名为build.conf，并修改：
+nesun@ubuntu:~/xposedSource/XposedTools-89$ ./build.pl -a java
+nesun@ubuntu:~/xposedSource/XposedTools-89$ apt-cache search Config::IniFiles
+libconfig-inifiles-perl - Read .ini-style configuration files
+nesun@ubuntu:~/xposedSource/XposedTools-89$ sudo apt install libconfig-inifiles-perl
+nesun@ubuntu:~/xposedSource/XposedTools-89$ apt-cache search File::ReadBackwards
+libfile-readbackwards-perl - Perl module for reading a file backwards by lines
+libio-all-perl - Perl module for unified IO operations
+nesun@ubuntu:~/xposedSource/XposedTools-89$ sudo apt install libfile-readbackwards-perl
+nesun@ubuntu:~/xposedSource/XposedTools-89$ apt-cache search File::Tail
+libfile-tail-perl - File::Tail perl module
+nesun@ubuntu:~/xposedSource/XposedTools-89$ sudo apt install libfile-tail-perl
+nesun@ubuntu:~/xposedSource/XposedTools-89$ apt-cache search Tie::IxHash
+libtie-ixhash-perl - Perl module to order associative arrays
+nesun@ubuntu:~/xposedSource/XposedTools-89$ sudo apt install libtie-ixhash-perl
+nesun@ubuntu:~/xposedSource/XposedTools-89$ ./build.pl -a java
+编译失败，根据错误提示，需要使用jdk8来编译。
+
+
+
+现在安装 JDK1.8:
+终端命令行：
+添加软件源
+sudo add-apt-repository ppa:openjdk-r/ppa
+更新源
+sudo apt-get update
+安装　openjdk-8-jdk
+sudo apt-get install openjdk-8-jdk
+
+nesun@ubuntu:~/xposedSource/XposedTools-89$ sudo update-alternatives --config java
+[sudo] password for nesun: 
+There are 2 choices for the alternative java (providing /usr/bin/java).
+
+  Selection    Path                                            Priority   Status
+------------------------------------------------------------
+* 0            /usr/lib/jvm/java-7-openjdk-amd64/jre/bin/java   1071      auto mode
+  1            /usr/lib/jvm/java-7-openjdk-amd64/jre/bin/java   1071      manual mode
+  2            /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java   1069      manual mode
+
+Press enter to keep the current choice[*], or type selection number: 2
+update-alternatives: using /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java to provide /usr/bin/java (java) in manual mode
+nesun@ubuntu:~/xposedSource/XposedTools-89$ 
+nesun@ubuntu:~/xposedSource/XposedTools-89$ sudo update-alternatives --config javac
+There are 2 choices for the alternative javac (providing /usr/bin/javac).
+
+  Selection    Path                                         Priority   Status
+------------------------------------------------------------
+* 0            /usr/lib/jvm/java-7-openjdk-amd64/bin/javac   1071      auto mode
+  1            /usr/lib/jvm/java-7-openjdk-amd64/bin/javac   1071      manual mode
+  2            /usr/lib/jvm/java-8-openjdk-amd64/bin/javac   1069      manual mode
+
+Press enter to keep the current choice[*], or type selection number: 2
+update-alternatives: using /usr/lib/jvm/java-8-openjdk-amd64/bin/javac to provide /usr/bin/javac (javac) in manual mode
+nesun@ubuntu:~/xposedSource/XposedTools-89$ 
+
+
+
+安装程序包：
+sudo apt-get update
+为下载的每个 .deb 文件运行 dpkg。运行过程中可能会因缺少依赖项而出现错误：
+sudo dpkg -i {downloaded.deb file}
+解决缺少依赖项的问题：
+sudo apt-get -f install
+更新默认的 Java 版本 - 可选
+（可选）对于以上 Ubuntu 版本，您可以通过运行以下命令来更新默认的 Java 版本：
+sudo update-alternatives --config java
+sudo update-alternatives --config javac
+
+
+nesun@ubuntu:~/xposedSource/XposedTools-89$ ./build.pl -a java 仍旧报错 
+需要下载相应的sdk
+/home/nesun/Android/Sdk/sources/android-23
+
+https://dl.google.com/android/repository/platform-23_r03.zip
+https://dl.google.com/android/repository/sources-23_r01.zip
+nesun@ubuntu:~/xposedSource/XposedTools-89$ ./build.pl -a java 
+
+./build.pl -t arm:25
+编译生成供cpu架构为arm，sdk为25平台使用的Xposed
+编译完成后，将在Android源码目录/out/sdk25/arm生成可刷入手机的zip文件
+
+
+
+/home/nesun/xposedSource/XposedTools-89/build.conf
+```
+[General]
+outdir = /home/nesun/android6/android-6.0.1_r11/out
+javadir = /home/nesun/android6/android-6.0.1_r11/frameworks/base/cmds/XposedBridge
+
+[Build]
+# Please keep the base version number and add your custom suffix
+version = 89 (custom build by xyz / %s)
+# makeflags = -j4
+
+[GPG]
+sign = release
+user = 852109AA!
+
+# Root directories of the AOSP source tree per SDK version
+[AospDir]
+23 = /home/nesun/android6/android-6.0.1_r11
+
+# SDKs to be used for compiling BusyBox
+# Needs https://github.com/rovo89/android_external_busybox
+#[BusyBox]
+#arm = 21
+#x86 = 21
+#armv5 = 17
+```
+
+
+nesun@ubuntu:~/xposedSource/XposedTools-89$ ./build.pl -t arm:23
+Loading config file /home/nesun/xposedSource/XposedTools-89/build.conf...
+Checking requirements...
+ERROR: /home/nesun/android6/android-6.0.1_r11/out/java/XposedBridge.jar doesn't exist or isn't readable
+nesun@ubuntu:~/xposedSource/XposedTools-89$ 
+nesun@ubuntu:~/xposedSource/XposedTools-89$ ./build.pl -t arm:23
+Creating xposed.prop file...
+/home/nesun/android6/android-6.0.1_r11/out/sdk23/arm/files/system/xposed.prop
+Creating flashable ZIP file...
+/home/nesun/android6/android-6.0.1_r11/out/sdk23/arm/xposed-v65-sdk23-arm-custom-build-by-xyz-20211208.zip
+
+编译成功之后生成的文件在 /home/nesun/android6/android-6.0.1_r11/out/sdk23/arm/目录下，需要拷贝的文件位于： /home/nesun/android6/android-6.0.1_r11/out/sdk23/arm/files/system
+
+
+编译之后生成的bin文件夹和lib文件夹下的文件替换/home/nesun/android6/android-6.0.1_r11/out/target/product/hammerhead/system/文件夹下的bin文件和lib文件里的相同的文件。需要注意的是用xposed编译生成的app_process32_xposed替换system/bin文件夹下的app_process32，将xposed.prop文件移动到system文件夹下。
+
+把/home/nesun/android6/android-6.0.1_r11/out/sdk23/arm/files/system目录下lib目录中的文件拷贝到 
+
+
+
+替换完成之后在android源码目录执行一遍
+source ./build/envsetup.sh
+lunch
+make snod（make snod命令的作用是重新生成镜像文件。）
+
+
+
+nesun@ubuntu:~/android6/android-6.0.1_r11/out/target/product/hammerhead$ adb reboot bootloader
+nesun@ubuntu:~/android6/android-6.0.1_r11/out/target/product/hammerhead$ fastboot flashall -w
+
+
+六　集成测试
+将修改之后的img文件刷入手机
+具体步骤请看第二部分
+查看结果
+重启手机，抓取日志，查看xposedbridge.jar包是否成功导入。
+日志查看命令
+adb logcat | grep -i xposed
+
+
+
+
+在目录中/sdcard/Android/data/de.robv.android.xposed.installer/cache新建目录downloads
+再新建一个framework目录
+
+把框架zip文件拷贝到/sdcard/Android/data/de.robv.android.xposed.installer/cache/downloads/framework
+
+nesun@ubuntu:~/android6/android-6.0.1_r11/out/sdk23/arm$ adb push xposed-v65-sdk23-arm-custom-build-by-xyz-20211208.zip /sdcard/Android/data/de.robv.android.xposed.installer/cache/downloads/framework
+nesun@ubuntu:~/android6/android-6.0.1_r11/out/sdk23/arm$ pwd
+/home/nesun/android6/android-6.0.1_r11/out/sdk23/arm
+
+nesun@ubuntu:~/android6/android-6.0.1_r11/out/sdk23/arm$ adb push /home/nesun/android6/android-6.0.1_r11/out/sdk23/arm/xposed-v65-sdk23-arm-custom-build-by-xyz-20211208.zip /sdcard/Android/data/de.robv.android.xposed.installer/cache/downloads/framework
+nesun@ubuntu:~/android6/android-6.0.1_r11/out/sdk23/arm$ adb reboot
+
+
+/sdcard/Android/data/de.robv.android.xposed.installer/cache/downloads/framework
+
+
+
+直接git拷贝源码：
+git clone https://github.com/rovo89/android_art -b xposed-nougat-mr2 art,
+
+git clone https://github.com/rovo89/XposedInstaller -b 3.1.5 XposedInstaller
+rm -rf art
+git clone https://github.com/rovo89/android_art.git -b xposed-nougat-mr2  art
+
+
+编译XposedInstaller：
+nesun@ubuntu:~/Desktop$ tar zxvf /mnt/hgfs/android-system56/xposedBuild/XposedInstaller-3.1.5.tar.gz -C /home/nesun/android6/android-6.0.1_r11/packages/apps
+nesun@ubuntu:~/Desktop$ mv /home/nesun/android6/android-6.0.1_r11/packages/apps/XposedInstaller-3.1.5/ /home/nesun/android6/android-6.0.1_r11/packages/apps/XposedInstaller/
+nesun@ubuntu:~/Desktop$ cd /home/nesun/android6/android-6.0.1_r11/packages/apps/XposedInstaller/
+
+nesun@ubuntu:~/android6/android-6.0.1_r11/packages/apps/XposedInstaller$ gedit Android.mk（添加如下内容）
+android studio 工程在android 源码编译：
+https://blog.csdn.net/shiluohuashengmi/article/details/81085572
+https://blog.csdn.net/w469622007/article/details/77988457
+https://blog.csdn.net/anlory/article/details/82356727
+```
+LOCAL_PATH:= $(call my-dir)
+#清理缓存变量
+include $(CLEAR_VARS)
+#表示目标模式
+LOCAL_MODULE_TAGS := samples
+#表示源文件编译路径 这个应用里面只有java源文件
+LOCAL_SRC_FILES := $(call all-java-files-under, src)
+#表示项目包名也就是模块名，在项目中唯一
+LOCAL_PACKAGE_NAME := HelloWorld
+#指定编译sdk版本为当前版本
+LOCAL_SDK_VERSION := current
+# 使用该指令编译目标Apk.
+include $(BUILD_PACKAGE)
+#搜索编译该源码目录下所有的mk文件，如果没有可以不写
+include $(call all-makefiles-under,$(LOCAL_PATH))
+```
+把名称（LOCAL_PACKAGE_NAME 的值）添加在/build/target/product/core.mk中
+
+进入目录~/android6/android-6.0.1_r11/packages/apps/XposedInstaller编译XposedInstaller
+nesun@ubuntu:~/android6/android-6.0.1_r11/packages/apps/XposedInstaller$ ./gradlew（会自动下载gradle，并且需要设置 ANDROID_HOME ）
+
+设置ANDROID_HOME
+nesun@ubuntu:~/android6/android-6.0.1_r11/packages/apps/XposedInstaller$ vi ~/.bashrc
+```
+export ANDROID_HOME=/home/nesun/Android/Sdk
+export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
+```
+nesun@ubuntu:~/android6/android-6.0.1_r11/packages/apps/XposedInstaller$ source ~/.bashrc
+nesun@ubuntu:~/android6/android-6.0.1_r11/packages/apps/XposedInstaller$ ./gradlew
+nesun@ubuntu:~/android6/android-6.0.1_r11/packages/apps/XposedInstaller$ ./gradlew build
+
+根据错误提示，在~/android6/android-6.0.1_r11/packages/apps/XposedInstaller/app/build.gradle中添加（不需要下面android部分）
+```
+android {
+      lintOptions {
+          abortOnError false
+      }
+  }
+```
+source ./build/envsetup.sh
+lunch
+make snod（make snod命令的作用是重新生成镜像文件。）
+
+
+编译成功之后把生成的未签名文件：~/android6/android-6.0.1_r11/packages/apps/XposedInstaller/app/build/outputs/apk/release/XposedInstaller_3.1.5-release-unsigned.apk 拷贝到 ~/android6/android-6.0.1_r11/packages/apps/XposedInstaller/ 目录内
+相应Android.mk文件内容为：（~/android6/android-6.0.1_r11/packages/apps/XposedInstaller/Android.mk）
+```
+LOCAL_PATH:= $(call my-dir)
+#清理缓存变量
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := XposedInstaller
+LOCAL_SRC_FILES := XposedInstaller_3.1.5-release-unsigned.apk
+LOCAL_MODULE_CLASS := APPS
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_SUFFIX := $(COMMON_ANDROID_PACKAGE_SUFFIX)
+LOCAL_CERTIFICATE := platform
+
+include $(BUILD_PREBUILT)
+```
+/build/target/product/core.mk中的PRODUCT_PACKAGES下添加（ Android.mk中的LOCAL_MODULE/LOCAL_PACKAGE_NAME） XposedInstaller
+
+
+source ./build/envsetup.sh
+lunch
+make -j4/make snod
+
+
+
+
+
+
+将 XposedInstaller  放至 /packages/apps
+新建Android.mk文件，示例如下：
+
+
+    LOCAL_PATH:= $(call my-dir)
+
+    #清理缓存变量
+
+    include $(CLEAR_VARS)
+
+    #表示目标模式
+
+    LOCAL_MODULE_TAGS := samples
+
+    #表示源文件编译路径
+ 这个应用里面只有java源文件
+
+    LOCAL_SRC_FILES := $(call all-java-files-under, src)
+
+    #表示项目包名也就是模块名，在项目中唯一
+
+    LOCAL_PACKAGE_NAME := HelloWorld
+ 
+   #指定编译sdk版本为当前版本
+
+    LOCAL_SDK_VERSION := current
+
+    # 使用该指令编译目标Apk.
+
+    include $(BUILD_PACKAGE)
+
+    #搜索编译该源码目录下所有的mk文件，如果没有可以不写
+    include $(call all-makefiles-under,$(LOCAL_PATH))
+
+添加在/build/target/product/core.mk中
+
+
+XposedInstaller 安装一定不能 使用系统的 gradle 先删除 apt-get remove gradle,看上面
+注意:XposedInstaller-3.1 有带 gradlew 复制到 XposedInstaller-3.0-alpha4,认 gradlew
+java.lang.UnsupportedClassVersionError: com/android/build/gradle/AppPlugin : Unsupported major.minor version 52.0  
+编译环境版本太低，java 8 class file的版本是52，Java 7虚拟机只能支持到51。所以需要升级到java 8 vm才行
+
+
+
+rm -rf ~/android6/android-6.0.1_r11/art/
+git clone https://github.com/rovo89/android_art.git -b xposed-marshmallow  ~/android6/android-6.0.1_r11/art/
+git clone https://github.com/rovo89/Xposed.git -b v89  ~/android6/android-6.0.1_r11/frameworks/base/cmds/xposed/
+git clone https://github.com/rovo89/XposedBridge -b v89  ~/android6/android-6.0.1_r11/frameworks/base/cmds/XposedBridge/
+git clone https://github.com/rovo89/XposedInstaller.git -b 3.1.5  ~/android6/android-6.0.1_r11/packages/apps/XposedInstaller
+
+
+在单独下载XposedTools
+
+
+
+magisk root:https://blog.csdn.net/wang_624/article/details/116615085
+
+
+https://github.com/topjohnwu/Magisk/releases
+
+然后打开magisk 应用程序，如果显示如下图所示信息，那么就可以直接离线获取root。
+你的设备ramdisk显示为yes或 是 那么就需要boot.img，当你的设备ramdisk显示为no或 否 ，那么就需要recovery.img。
+
+1.将boot.img 复制到Android设备
+命令：adb push boot.img /sdcard/Download/
+2.按下Magisk的"安装"按钮
+
+3.选择"选择并修补文件"，找到刚才复制到设备的img文件
+4.修复完成后，会返回一个路径，使用adb pull到本地 ，这里每个人的名称都是不一样的，具体参考magisk返回的路径
+adb pull /storage/emulated/0/Download/magisk_patched-22100_xoRIC.img
+5.重启到引导模式，并flash magisk_patched-22100_xoRIC.img
+adb reboot bootloader
+
+fastboot flash boot magisk_xxx.img
+6.等待结束后，重启，赋shell root权限
+
+
+nesun@ubuntu:~/android6/android-6.0.1_r11/out/target/product/hammerhead$ adb reboot bootloader
+nesun@ubuntu:~/android6/android-6.0.1_r11/out/target/product/hammerhead$ fastboot flash boot /mnt/hgfs/android-system56/magisk_root/magisk_patched-23000_vlHM9.img
+
+
+
+2.82:SUPERSU:
+https://pan.baidu.com/s/1pKKUqOb?_at_=1638971616302
+https://forum.xda-developers.com/t/flashable-zip-super-su-pro-2-82-for-all-roms.3761227/
+
+https://download.chainfire.eu/1113/SuperSU/UPDATE-SuperSU-v2.82-20170528234214.zip
+https://download.chainfire.eu/1113/SuperSU/UPDATE-SuperSU-v2.82-20170528234214.zip?retrieve_file=1
+
+
+TWRP for hammerhead: 
+https://dl.twrp.me/hammerhead/
+
+
+adb reboot bootloader
+fastboot flash recovery twrp.img
+fastboot reboot
+需要按键进入recovery模式才能生效   -----> 同时按下电源键跟音量下键
+
+
+把 拷贝到sdcard下的Download目录内，进入recovery模式 install
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------
+XposedBridge修改(android-studio-2020.3.1.25-linux.tar)：
+使用android-studio打开项目 /home/nesun/android6/android-6.0.1_r11/frameworks/base/cmds/XposedBridge
+最外层的build.gradle 增加 google() 库。即在buildscript -> repositories 和 allprojects ->repositories 下增加 google()
+最外层的build.gradle 把`classpath 'com.android.tools.build:gradle:2.2.2'` 修改为`classpath 'com.android.tools.build:gradle:3.2.0'`
+
+gradle.properties 中 `distributionUrl=https\://services.gradle.org/distributions/gradle-4.8.1-bin.zip`  即使用 4.8.1版本的gradle
+
+1.编译出来apk之后，把编译出来的文件app-release-unsigned.apk改名为 XposedBridge.jar 
+2.把重命名的XposedBridge.jar 拷贝到 `/home/nesun/android6/android-6.0.1_r11/out/java` 中
+3.把重命名的XposedBridge.jar 拷贝到 `/home/nesun/android6/android-6.0.1_r11/out/target/product/hammerhead/system/framework` 中
+4.重新打包并刷机
+```
+source ./build/envsetup.sh
+lunch
+make snod
+cd ~/android6/android-6.0.1_r11/out/target/product/hammerhead
+fastboot devices -l
+fastboot flashall -w
+```
+
+5. 此时修改Android.mk之后进入到XposedTools目录中使用命令`nesun@ubuntu:~/xposedSource/XposedTools-89$ ./build.pl -a java` 编译，修改lint的错误也可以编译成功
+修改后的Android.mk(`/home/nesun/android6/android-6.0.1_r11/frameworks/base/cmds/XposedBridge/Android.mk`)文件:
+```
+# https://juejin.cn/post/6844903709730668551
+LOCAL_PATH:= $(call my-dir)
+include $(CLEAR_VARS)
+LOCAL_DEX_PREOPT = false
+LOCAL_MODULE := XposedBridge
+
+LOCAL_SRC_FILES := \
+     $(call all-java-files-under, app/src/main/java) \
+     $(call all-java-files-under, app/src/main/apacheCommonsLang/external) \
+     $(call all-java-files-under, hiddenapistubs/src/main/java)
+
+include $(BUILD_JAVA_LIBRARY)
+
+$(LOCAL_INTERMEDIA_TARGETS): PRIVATE_EXTRA_JAR_ARGS := -C "$(LOCAL_PATH)" \
+assets -C "#(LOCAL_PATH)" NOTICE.txt
+
+include $(call all-makefiles-under, $(LOCAL_PATH))
+```
+
+安装XposedInstall.apk之后需要重启手机才能验证xposed框架是否安装成功
+
+
+
+
+
+
+
+
+
+使用android studio编译XposedInstaller拷贝未签名的apk文件到XposedInstaller目录下：
+
+编写Android.mk（/home/nesun/android6/android-6.0.1_r11/packages/apps/XposedInstaller/Android.mk）文件
+```
+LOCAL_PATH:= $(call my-dir)
+#清理缓存变量
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := XposedInstaller
+LOCAL_SRC_FILES := XposedInstaller_3.1.5-release-unsigned.apk
+LOCAL_MODULE_CLASS := APPS
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_SUFFIX := $(COMMON_ANDROID_PACKAGE_SUFFIX)
+LOCAL_CERTIFICATE := platform
+
+include $(BUILD_PREBUILT)
+```
+然后在/home/nesun/android6/android-6.0.1_r11/build/target/product/core.mk文件的PRODUCT_PACKAGES下面加上目录 XposedInstaller
+
+重新编译刷机
+```
+source ./build/envsetup.sh
+lunch
+make -j4
+```
+
+
+安装测试助手需要root权限，先刷入twrp，重启后进入recovery，然后在install supersu ，可以不带root管理工具，即把zip包中common下的superuser.apk删除之后在刷入手机
+Nesux5 关机之后按住电源键跟音量下键可以进入到bootloader，选择recovery模式之后，按电源键确认进入recovery模式，在手机重启过程中（出现google标志）按住电源键即可进入到recovery模式进行双清。
+
+
+adb reboot bootloader
+fastboot flash recovery twrp.img
+fastboot reboot
+
+--------------------------------------------------------------------------------------------------------------
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------
+脱壳步骤：
+1. 在/data/local/tmp目录下创建文件dexfileunshell，内容为待脱壳app的包名，不能有换行符!!!!  echo -n "不换行输出"
+2.修改文件权限为777： chmod 777 
+3.打开待脱壳app，去目录/data/data/pkgname/dexfiles下找脱壳的dex文件。
+```
+shell@hammerhead:/data/local/tmp $ echo -n "com.huluxia.gametools" > dexfileunshell
+shell@hammerhead:/data/local/tmp $ ls -al
+-rwxrwxrwx shell    shell          22 1970-11-21 19:55 dexfileunshell
+shell@hammerhead:/data/local/tmp $ cat dexfileunshell                          
+com.huluxia.gametoolsshell@hammerhead:/data/local/tmp $ chmod 777 dexfileunshell
+root@hammerhead:/data/data/com.huluxia.gametools/dexfiles # ls -al
+```
+
+
+
+
+-----------------------------------------------------------------------------------
+
+
+编译顺序为：
+1. 先添加xposed源码到aosp中，编译好xposed的各种文件。（主要是XposedBridge）
+2. 集成脱壳环境并编译aosp
+3. 使用XposedTools再次编译一下Xposed的各种文件，主要是: 
+    ```
+    nesun@ubuntu:~/xposedSource/XposedTools-89$ ./build.pl -t arm:23
+    ......
+    Creating xposed.prop file...
+    /home/nesun/android6/android-6.0.1_r11/out/sdk23/arm/files/system/xposed.prop
+    Creating flashable ZIP file...
+    /home/nesun/android6/android-6.0.1_r11/out/sdk23/arm/xposed-v89-sdk23-arm-custom-build-by-xyz-20211210.zip
+    ```
+    之所以要重新编译Xposed是因为集成脱壳环境修改了art目录中在代码，而集成Xposed是把原来的art删掉，用Xposed的相关部分替代。
+4. 把编译好的xposed各种文件放入到相应目录中，make snod
+    /home/nesun/android6/android-6.0.1_r11/out/sdk23/arm/files/目录下的system目录拷贝到 /home/nesun/android6/android-6.0.1_r11/out/target/product/hammerhead/
+    注意：把/home/nesun/android6/android-6.0.1_r11/out/target/product/hammerhead/system/bin/中的app_process32删除，并且把app_process32_xposed改名为app_process32
+5. 刷机，双清数据
+6. 刷入root
+    adb reboot bootloader
+    fastboot flash recovery twrp.img  // fastboot flash recovery /mnt/hgfs/android-system56/twrp_root/twrp-3.0.2-0-hammerhead.img
+    fastboot reboot
+    按住电源键跟音量下键再次进入bootloader，选择recovery mode进入twrp ， 拷贝supersu 到Download目录，在twrp中选择安装并重启。
+7. 安装mscan等apk
+8. 测试
+
+
+
+
+
+
+
+
+
+
+===============================================================================================
+Nexus 6P:
+把在~/.bashrc里面增加的环境变量先全部注释掉。
+
+export USE_CCACHE=1
+prebuilts/misc/linux-x86/ccache/ccache -M 50G
+
+$ export USE_CCACHE=1
+$ export CCACHE_DIR=/<path_of_your_choice>/.ccache
+$ prebuilts/misc/linux-x86/ccache/ccache -M 50G
+
+
+nesun@ubuntu:~/android6$ unzip /mnt/hgfs/android-system56/android-6.0.1_r11.zip  -d ~/android6/android-6.0.1_r11_6p/
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ source build/envsetup.sh
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ lunch (17. aosp_angler-userdebug)
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ make -j4
+
+
+从下载好的工厂镜像包中解压出vendor.img 
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p/out/target/product/angler$ cp /mnt/hgfs/android-system56/img_6p/vendor.img .
+
+
+刷完机之后需要双清数据。
+进入bootloader后，选择recovery mode，按住电源键，待到显示文字时按一次电源键，下面提示变化了再按一次电源键。
+
+
+
+拷贝
+/home/nesun/android6/android-6.0.1_r11/frameworks/base/cmds/XposedBridge
+/home/nesun/android6/android-6.0.1_r11/frameworks/base/cmds/xposed
+/home/nesun/android6/android-6.0.1_r11/packages/apps/XposedInstaller
+
+修改
+/build/target/product/core.mk中的PRODUCT_PACKAGES下添加（ Android.mk中的LOCAL_MODULE/LOCAL_PACKAGE_NAME） XposedInstaller
+
+
+去XposedTools修改相应配置/home/nesun/xposedSource/XposedTools-89/build.conf，重新编译xposed所需文件 
+```
+[General]
+outdir = /home/nesun/android6/android-6.0.1_r11_6p/out
+javadir = /home/nesun/android6/android-6.0.1_r11_6p/frameworks/base/cmds/XposedBridge
+
+[Build]
+# Please keep the base version number and add your custom suffix
+version = 89 (custom build by xyz / %s)
+# makeflags = -j4
+
+[GPG]
+sign = release
+user = 852109AA!
+
+# Root directories of the AOSP source tree per SDK version
+[AospDir]
+23 = /home/nesun/android6/android-6.0.1_r11_6p
+
+# SDKs to be used for compiling BusyBox
+# Needs https://github.com/rovo89/android_external_busybox
+#[BusyBox]
+#arm = 21
+#x86 = 21
+#armv5 = 17
+```
+
+检查/home/nesun/android6/android-6.0.1_r11/out/java目录中是否有XposedBridge.jar
+先编译XposedBridge.jar，需要先切换jdk版本为openjdk8 
+sudo update-alternatives --config java
+sudo update-alternatives --config javac
+nesun@ubuntu:~/xposedSource/XposedTools-89$ sudo update-alternatives --config java
+[sudo] password for nesun: 
+There are 2 choices for the alternative java (providing /usr/bin/java).
+
+  Selection    Path                                            Priority   Status
+------------------------------------------------------------
+* 0            /usr/lib/jvm/java-7-openjdk-amd64/jre/bin/java   1071      auto mode
+  1            /usr/lib/jvm/java-7-openjdk-amd64/jre/bin/java   1071      manual mode
+  2            /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java   1069      manual mode
+
+Press enter to keep the current choice[*], or type selection number: 2
+update-alternatives: using /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java to provide /usr/bin/java (java) in manual mode
+nesun@ubuntu:~/xposedSource/XposedTools-89$ sudo update-alternatives --config javac
+There are 2 choices for the alternative javac (providing /usr/bin/javac).
+
+  Selection    Path                                         Priority   Status
+------------------------------------------------------------
+* 0            /usr/lib/jvm/java-7-openjdk-amd64/bin/javac   1071      auto mode
+  1            /usr/lib/jvm/java-7-openjdk-amd64/bin/javac   1071      manual mode
+  2            /usr/lib/jvm/java-8-openjdk-amd64/bin/javac   1069      manual mode
+
+Press enter to keep the current choice[*], or type selection number: 2
+update-alternatives: using /usr/lib/jvm/java-8-openjdk-amd64/bin/javac to provide /usr/bin/javac (javac) in manual mode
+nesun@ubuntu:~/xposedSource/XposedTools-89$
+
+nesun@ubuntu:~/xposedSource/XposedTools-89$ ./build.pl -a java
+按照错误提示修改：
+```
+  Fix the issues identified by lint, or add the following to your build script to proceed with errors:
+  ...
+  android {
+      lintOptions {
+          abortOnError false
+      }
+  }
+  ...
+  
+  Errors found:
+```
+修改/home/nesun/android6/android-6.0.1_r11_6p/frameworks/base/cmds/XposedBridge/app/build.gradle 在android下增加 
+```
+lintOptions {
+    abortOnError false
+}
+```
+重新编译之后，把编译出来的拷贝一份到/home/nesun/android6/android-6.0.1_r11_6p/out/java目录中
+
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p/out/target/product/angler$ mkdir ~/android6/android-6.0.1_r11_6p/out/java
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p/out/target/product/angler$ cp /home/nesun/android6/android-6.0.1_r11_6p/frameworks/base/cmds/XposedBridge/app/build/outputs/apk/release/app-release-unsigned.apk ~/android6/android-6.0.1_r11_6p/out/java/XposedBridge.jar
+
+
+继续编译xposed所需文件：
+nesun@ubuntu:~/xposedSource/XposedTools-89$ ./build.pl -t arm:23
+......
+Creating xposed.prop file...
+/home/nesun/android6/android-6.0.1_r11_6p/out/sdk23/arm/files/system/xposed.prop
+Creating flashable ZIP file...
+/home/nesun/android6/android-6.0.1_r11_6p/out/sdk23/arm/xposed-v89-sdk23-arm-custom-build-by-xyz-20211216.zip
+
+
+
+！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！  Nexus 6p 需要编译 64 位 ./build.pl -t arm64:23
+编译全工程：./build.pl -t arm64:sdkVersion
+https://blog.csdn.net/xiaolli/article/details/58049210
+
+
+
+查看相关目录/home/nesun/android6/android-6.0.1_r11_6p/out/sdk23/arm是否有相应文件。
+切换jdk为openjdk7，重新编译aosp源码：
+```
+sudo update-alternatives --config java
+sudo update-alternatives --config javac
+source ./build/envsetup.sh
+lunch
+make -j4
+```
+
+把编译出来的xposed辅助文件/home/nesun/android6/android-6.0.1_r11_6p/out/sdk23/arm/files/system 拷贝到 /home/nesun/android6/android-6.0.1_r11_6p/out/target/product/angler
+删除/home/nesun/android6/android-6.0.1_r11_6p/out/target/product/angler/system/bin/app_process32 ，修改/home/nesun/android6/android-6.0.1_r11_6p/out/target/product/angler/system/bin/app_process32_xposed名称为app_process32
+```
+source ./build/envsetup.sh
+lunch
+make snod
+```
+
+
+刷机测试
+
+export USE_CCACHE=1
+export CCACHE_DIR=/<path_of_your_choice>/.ccache
+prebuilts/misc/linux-x86/ccache/ccache -M 50G
+
+export USE_CCACHE=1
+prebuilts/misc/linux-x86/ccache/ccache -M 50G
+source build/envsetup.sh
+
+https://blog.csdn.net/qq_39153421/article/details/104237072
+
+
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ export USE_CCACHE=1
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ export CCACHE_DIR=~/android6/android-6.0.1_r11_6p/.ccache
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ prebuilts/misc/linux-x86/ccache/ccache -M 50G
+Set cache size limit to 50.0 Gbytes
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ source build/envsetup.sh
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ lunch
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ make -j4
+
+
+刷机报错:
+```
+Allocating group tables: done                            
+Writing inode tables: done                            
+Creating journal (65536 blocks): done
+Writing superblocks and filesystem accounting information: done   
+
+Sending 'userdata' (312 KB)                        OKAY [  0.065s]
+Writing 'userdata'                                 FAILED (remote: 'Bogus size sparse and chunk header')
+fastboot: error: Command failed
+```
+
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p/out/target/product/angler$ fastboot erase userdata
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p/out/target/product/angler$ fastboot flash userdata userdata.img
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p/out/target/product/angler$ fastboot erase cache
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p/out/target/product/angler$ fastboot flash cache cache.img
+
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ mmm ./frameworks/base/cmds/XposedBridge/
+.....
+Install: out/target/product/angler/system/framework/XposedBridge.jar
+make: Leaving directory `/home/nesun/android6/android-6.0.1_r11_6p'
+
+#### make completed successfully (7 seconds) ####
+
+把编译好的out/target/product/hammerhead/system/framework/XposedBridge.jar拷贝一份到 out/java/XposedBridge.jar 
+后续编译 ./build.pl -t arm:23（编译生成供cpu架构为arm，sdk为23平台使用的Xposed）会用到
+！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！  Nexus 6p 需要编译 64 位 ./build.pl -t arm64:23
+
+
+tar zxvf /mnt/hgfs/android-system56/xposedBuild/android_art-89-sdk23.tar.gz -C ~/android6/android-6.0.1_r11_6p/
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ tar zxvf /mnt/hgfs/android-system56/xposedBuild/android_art-89-sdk23.tar.gz -C ~/android6/android-6.0.1_r11_6p/
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ mv android_art-89-sdk23/ art/
+
+
+
+
+
+
+
+
+Xposed：
+https://forum.xda-developers.com/t/official-xposed-for-lollipop-marshmallow-nougat-oreo-v90-beta3-2018-01-29.3034811/
+https://dl-xda.xposed.info/framework/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=====================================================================================
+nesun@ubuntu:~/android6$ unzip /mnt/hgfs/android-system56/android-6.0.1_r11.zip  -d ~/android6/android-6.0.1_r11_6p/
+
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ export USE_CCACHE=1
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ export CCACHE_DIR=~/android6/android-6.0.1_r11_6p/.ccache
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ prebuilts/misc/linux-x86/ccache/ccache -M 50G
+Set cache size limit to 50.0 Gbytes
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ source build/envsetup.sh
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ lunch
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ make -j4
+
+碰到编译错误：
+`make: *** wait: No child processes.  Stop`
+重新编译（make -j4）即可。
+
+
+把解压出来的vendor.img拷贝到相应目录，刷机双清测试。
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p/out/target/product/angler$ adb reboot bootloader
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p/out/target/product/angler$ fastboot flashall -w
+
+拷贝boot.img:
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ cp out/target/product/angler/boot.img /mnt/hgfs/android-system56/img_6p/
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ md5sum out/target/product/angler/boot.img 
+9be4a5a9982d80030bda6f89d5d25268  out/target/product/angler/boot.img
+
+
+拷贝boot.img待后续使用magisk 使用:
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ cp out/target/product/angler/boot.img /mnt/hgfs/android-system56/img_6p/
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ md5sum out/target/product/angler/boot.img 
+9be4a5a9982d80030bda6f89d5d25268  out/target/product/angler/boot.img
+
+
+
+备份art目录：
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ zip -q -r art_asop.zip ./art/
+
+拷贝相关驱动过来：
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ cp /mnt/hgfs/android-system56/img_6p/vendor.img out/target/product/angler/
+
+拷贝框架apk：
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ cp -R /mnt/hgfs/android-system56/xposed_89_build/XposedInstaller/ packages/apps/
+拷贝框架native部分：
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ cp -R /mnt/hgfs/android-system56/xposed_89_build/xposed/ frameworks/base/cmds/
+拷贝框架java部分：
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ cp -R /mnt/hgfs/android-system56/xposed_89_build/XposedBridge/ frameworks/base/cmds/
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$
+拷贝框架art：
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ rm -rf art/
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ tar zxvf /mnt/hgfs/android-system56/xposedBuild/android_art-89-sdk23.tar.gz -C ~/android6/android-6.0.1_r11_6p/
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ mv android_art-89-sdk23/ art/
+
+修改：
+/build/target/product/core.mk中的PRODUCT_PACKAGES下添加（ Android.mk中的LOCAL_MODULE/LOCAL_PACKAGE_NAME） XposedInstaller
+
+
+切换jdk为1.8：
+nesun@ubuntu:~/xposedSource/XposedTools-89$ sudo update-alternatives --config java
+nesun@ubuntu:~/xposedSource/XposedTools-89$ sudo update-alternatives --config javac
+
+使用mmm编译XposedBridge：
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ export USE_CCACHE=1
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ export CCACHE_DIR=~/android6/android-6.0.1_r11_6p/.ccache
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ source build/envsetup.sh
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ lunch
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ mmm ./frameworks/base/cmds/XposedBridge/
+.....
+Install: out/target/product/angler/system/framework/XposedBridge.jar
+make: Leaving directory `/home/nesun/android6/android-6.0.1_r11_6p'
+
+在out目录新建目录java，拷贝一份XposedBridge.jar到out/java目录中。
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ mkdir ~/android6/android-6.0.1_r11_6p/out/java
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ cp out/target/product/angler/system/framework/XposedBridge.jar out/java/
+
+
+
+//编译XposedBridge：
+//nesun@ubuntu:~/xposedSource/XposedTools-89$ ./build.pl --help
+//nesun@ubuntu:~/xposedSource/XposedTools-89$ ./build.pl -a java
+//Loading config file /home/nesun/xposedSource/XposedTools-89/build.conf...
+//Checking requirements...
+//Building the Java part...
+//Compiling...
+//
+//把编译输出未签名的apk文件改名为XposedBridge.jar
+//在out目录新建目录java，拷贝一份XposedBridge.jar到out/java目录中。
+//nesun@ubuntu:~/xposedSource/XposedTools-89$ mkdir ~/android6/android-6.0.1_r11_6p/out/java
+//nesun@ubuntu:~/xposedSource/XposedTools-89$ cp ~/android6/android-6.0.1_r11_6p/frameworks/base/cmds/XposedBridge/app/build/outputs/apk/release/app-release-unsigned.apk ~/android6/android-6.0.1_r11_6p/out/java/XposedBridge.jar
+
+
+
+
+
+编译所需文件：
+nesun@ubuntu:~/xposedSource/XposedTools-89$ ./build.pl -t arm64:23
+
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ sudo update-alternatives --config java
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ sudo update-alternatives --config javac
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ export USE_CCACHE=1
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ export CCACHE_DIR=~/android6/android-6.0.1_r11_6p/.ccache
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ source build/envsetup.sh
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ lunch
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ make -j4
+
+
+替换文件：
+把目录~/android6/android-6.0.1_r11_6p/out/sdk23/arm64/files/system中相应子目录中的文件拷贝到~/android6/android-6.0.1_r11_6p/out/target/product/angler/system 对应的目录中去
+拷贝目录 ~/android6/android-6.0.1_r11_6p/out/sdk23/arm64/files/system 到 ~/android6/android-6.0.1_r11_6p/out/target/product/angler 目录，
+删除~/android6/android-6.0.1_r11_6p/out/target/product/angler/system/bin目录中的app_process32和app_process64，
+修改文件名 app_process32_xposed 为 app_process32，修改文件名app_process64_xposed 为 app_process64
+ 
+
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ export USE_CCACHE=1
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ export CCACHE_DIR=~/android6/android-6.0.1_r11_6p/.ccache
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ source build/envsetup.sh
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ lunch
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ make snod
+
+
+
+
+
+替换art目录重试：
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ rm -rf art/
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ unzip /mnt/hgfs/android-system56/xposed_89_build/android_art-xposed-marshmallow.zip -d ~/android6/android-6.0.1_r11_6p/
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ mv android_art-xposed-marshmallow/ art/
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ export USE_CCACHE=1
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ export CCACHE_DIR=~/android6/android-6.0.1_r11_6p/.ccache
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ source build/envsetup.sh
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ lunch
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ make -j4
+
+刷机测试是否正常（可以不用双清）。系统能正常起来，XposedInstaller显示未安装为正常!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+nesun@ubuntu:~/xposedSource/XposedTools-89$ ./build.pl -t arm64:23
+
+替换文件
+删除文件
+改名
+
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ export USE_CCACHE=1
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ export CCACHE_DIR=~/android6/android-6.0.1_r11_6p/.ccache
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ source build/envsetup.sh
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ lunch
+nesun@ubuntu:~/android6/android-6.0.1_r11_6p$ make snod
+
+刷机测试。
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+1. 刷入系统，刷机包https://developers.google.cn/android/images
+2. 使用root工具root，在8.1版本及以上只能使用magisk进行root，低版本5/6可以使用supersu（需要twrp）
+3. 刷入recovery（https://twrp.me/Devices/），根据设备厂商选择相应版本。其中Nexus 5 位于 https://twrp.me/lg/lgnexus5.html      Nexus 6p位于：https://twrp.me/Devices/Huawei/        pixel系列位于https://twrp.me/Devices/Google/     
+4. 刷入xposed框架（https://dl-xda.xposed.info/framework/），目前发现只支持到sdk 27 即8.1的版本
+5. 安装测试app，测试系统
+
+6. 貌似在android9以上只能刷EdXposed (https://blog.csdn.net/weixin_35335035/article/details/117669088)?????????????????
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
